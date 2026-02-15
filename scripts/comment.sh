@@ -44,7 +44,7 @@ BODY="${MARKER}
 | Category | Score | Grade |
 |----------|-------|-------|
 ${CATEGORY_ROWS}
-[Full report](https://callable-ai.com/score/${ID}) · [Embed badge](https://callable-ai.com/api/badge/${ID})"
+[Full report](https://www.callable-ai.com/score/${ID}) · [Embed badge](https://www.callable-ai.com/api/badge/${ID})"
 
 # --- Post or update PR comment ----------------------------------------------
 

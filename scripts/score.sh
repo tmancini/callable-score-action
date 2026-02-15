@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-API_BASE="https://callable-ai.com"
+API_BASE="https://www.www.callable-ai.com"
 MAX_RETRIES=2
 TIMEOUT=120
 RESULT_FILE=$(mktemp)
@@ -82,7 +82,7 @@ cat >> "$GITHUB_STEP_SUMMARY" <<EOF
 
 **${API_NAME}** — \`${CALLABLE_URL}\`
 
-[Full report](https://callable-ai.com/score/${ID}) · [Badge](https://callable-ai.com/api/badge/${ID})
+[Full report](https://www.callable-ai.com/score/${ID}) · [Badge](https://www.callable-ai.com/api/badge/${ID})
 EOF
 
 echo "Done — ${API_NAME}: ${SCORE}/100 (${GRADE})"
