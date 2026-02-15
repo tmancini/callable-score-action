@@ -11,30 +11,30 @@ die() { echo "::error::$1"; exit 1; }
 
 retry_curl() {
   local attempt=0
-  local response status
+  local tmpfile
+  tmpfile=$(mktemp)
+  trap "rm -f '$tmpfile'" RETURN
 
   while [ "$attempt" -le "$MAX_RETRIES" ]; do
-    response=$(curl -s -w "\n%{http_code}" --max-time "$TIMEOUT" \
+    local status
+    status=$(curl -s -o "$tmpfile" -w "%{http_code}" --max-time "$TIMEOUT" \
       -X POST "${API_BASE}/api/score" \
       -H "Content-Type: application/json" \
       -H "Authorization: Bearer ${CALLABLE_API_KEY}" \
-      -d "{\"url\": \"${CALLABLE_URL}\", \"force\": false}")
-
-    status=$(echo "$response" | tail -1)
-    body=$(echo "$response" | sed '$d')
+      -d "{\"url\": \"${CALLABLE_URL}\", \"force\": false}") || status="000"
 
     # Success
-    if [ "$status" -ge 200 ] && [ "$status" -lt 300 ]; then
-      echo "$body"
+    if [ "$status" -ge 200 ] 2>/dev/null && [ "$status" -lt 300 ] 2>/dev/null; then
+      cat "$tmpfile"
       return 0
     fi
 
-    # Retryable: 429, 5xx
-    if [ "$status" -eq 429 ] || [ "$status" -ge 500 ]; then
+    # Retryable: 429, 5xx, or connection failure (000)
+    if [ "$status" = "000" ] || [ "$status" -eq 429 ] 2>/dev/null || [ "$status" -ge 500 ] 2>/dev/null; then
       attempt=$((attempt + 1))
       if [ "$attempt" -le "$MAX_RETRIES" ]; then
         local wait=$((attempt * 5))
-        echo "::warning::HTTP $status — retrying in ${wait}s (attempt $((attempt))/${MAX_RETRIES})"
+        echo "::warning::HTTP $status — retrying in ${wait}s (attempt ${attempt}/${MAX_RETRIES})"
         sleep "$wait"
         continue
       fi
@@ -42,7 +42,7 @@ retry_curl() {
 
     # Non-retryable error
     local msg
-    msg=$(echo "$body" | jq -r '.error.message // .error // "Unknown error"' 2>/dev/null || echo "HTTP $status")
+    msg=$(jq -r '.error.message // .error // "Unknown error"' "$tmpfile" 2>/dev/null || echo "HTTP $status")
     die "API returned $status: $msg"
   done
 
