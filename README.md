@@ -26,7 +26,7 @@ jobs:
 | Input | Required | Default | Description |
 |---|---|---|---|
 | `url` | Yes | — | URL to OpenAPI spec, MCP manifest, SKILL.md, or API docs |
-| `api-key` | Yes | — | callable() API key (`ck_live_...`). Create one at [callable.dev/dashboard](https://callable.dev/dashboard). |
+| `api-key` | Yes | — | callable() API key (`ck_live_...`). Create one at [callable-ai.com/dashboard](https://callable-ai.com/dashboard). |
 | `threshold` | No | `0` | Minimum score to pass (0 = never fail) |
 | `comment` | No | `true` | Post PR comment with score breakdown |
 | `github-token` | No | `${{ github.token }}` | Token for PR comments |
@@ -56,7 +56,7 @@ On pull requests, the action posts (or updates) a comment with a full category b
 > | 🟢 Response Quality | 11/13 | A |
 > | 🟢 MCP Readiness | 8/10 | A |
 >
-> [Full report](https://callable.dev/score/abc123) · [Embed badge](https://callable.dev/api/badge/abc123)
+> [Full report](https://callable-ai.com/score/abc123) · [Embed badge](https://callable-ai.com/api/badge/abc123)
 
 The comment is updated in-place on subsequent pushes — no duplicates.
 
@@ -91,7 +91,7 @@ Scores are graded across 6 categories:
 
 ## Get an API Key
 
-1. Go to [callable.dev/dashboard](https://callable.dev/dashboard)
+1. Go to [callable-ai.com/dashboard](https://callable-ai.com/dashboard)
 2. Create an API key
 3. Add it as a repository secret named `CALLABLE_API_KEY`
 
