@@ -4,20 +4,19 @@ set -euo pipefail
 API_BASE="https://callable.dev"
 MAX_RETRIES=2
 TIMEOUT=120
+RESULT_FILE=$(mktemp)
+trap "rm -f '$RESULT_FILE'" EXIT
 
 # --- Helpers ----------------------------------------------------------------
 
 die() { echo "::error::$1"; exit 1; }
 
-retry_curl() {
+do_score() {
   local attempt=0
-  local tmpfile
-  tmpfile=$(mktemp)
-  trap "rm -f '$tmpfile'" RETURN
 
   while [ "$attempt" -le "$MAX_RETRIES" ]; do
     local status
-    status=$(curl -s -o "$tmpfile" -w "%{http_code}" --max-time "$TIMEOUT" \
+    status=$(curl -s -o "$RESULT_FILE" -w "%{http_code}" --max-time "$TIMEOUT" \
       -X POST "${API_BASE}/api/score" \
       -H "Content-Type: application/json" \
       -H "Authorization: Bearer ${CALLABLE_API_KEY}" \
@@ -25,12 +24,11 @@ retry_curl() {
 
     # Success
     if [ "$status" -ge 200 ] 2>/dev/null && [ "$status" -lt 300 ] 2>/dev/null; then
-      cat "$tmpfile"
       return 0
     fi
 
     # Retryable: 429, 5xx, or connection failure (000)
-    if [ "$status" = "000" ] || [ "$status" -eq 429 ] 2>/dev/null || [ "$status" -ge 500 ] 2>/dev/null; then
+    if [ "$status" = "000" ] || { [ "$status" -eq 429 ] 2>/dev/null; } || { [ "$status" -ge 500 ] 2>/dev/null; }; then
       attempt=$((attempt + 1))
       if [ "$attempt" -le "$MAX_RETRIES" ]; then
         local wait=$((attempt * 5))
@@ -42,7 +40,7 @@ retry_curl() {
 
     # Non-retryable error
     local msg
-    msg=$(jq -r '.error.message // .error // "Unknown error"' "$tmpfile" 2>/dev/null || echo "HTTP $status")
+    msg=$(jq -r '.error.message // .error // "Unknown error"' "$RESULT_FILE" 2>/dev/null || echo "HTTP $status")
     die "API returned $status: $msg"
   done
 
@@ -56,13 +54,13 @@ retry_curl() {
 command -v jq >/dev/null 2>&1 || die "jq is required (should be pre-installed on GitHub runners)"
 
 echo "Scoring ${CALLABLE_URL}..."
-RESULT=$(retry_curl)
+do_score
 
-# Parse fields
-SCORE=$(echo "$RESULT" | jq -r '.overallScore')
-GRADE=$(echo "$RESULT" | jq -r '.grade')
-ID=$(echo "$RESULT" | jq -r '.id')
-API_NAME=$(echo "$RESULT" | jq -r '.apiName')
+# Parse fields from RESULT_FILE
+SCORE=$(jq -r '.overallScore' "$RESULT_FILE")
+GRADE=$(jq -r '.grade' "$RESULT_FILE")
+ID=$(jq -r '.id' "$RESULT_FILE")
+API_NAME=$(jq -r '.apiName' "$RESULT_FILE")
 
 [ "$SCORE" = "null" ] && die "Unexpected response — missing overallScore"
 
@@ -73,7 +71,8 @@ API_NAME=$(echo "$RESULT" | jq -r '.apiName')
   echo "id=${ID}"
   echo "api_name=${API_NAME}"
   echo "json<<CALLABLE_EOF"
-  echo "$RESULT"
+  cat "$RESULT_FILE"
+  echo ""
   echo "CALLABLE_EOF"
 } >> "$GITHUB_OUTPUT"
 
