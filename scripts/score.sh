@@ -16,7 +16,7 @@ do_score() {
 
   while [ "$attempt" -le "$MAX_RETRIES" ]; do
     local status
-    status=$(curl -s -o "$RESULT_FILE" -w "%{http_code}" --max-time "$TIMEOUT" \
+    status=$(curl -sS -o "$RESULT_FILE" -w "%{http_code}" --max-time "$TIMEOUT" \
       -X POST "${API_BASE}/api/score" \
       -H "Content-Type: application/json" \
       -H "Authorization: Bearer ${CALLABLE_API_KEY}" \
