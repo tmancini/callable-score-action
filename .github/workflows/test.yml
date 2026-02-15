@@ -15,7 +15,7 @@ jobs:
         id: score
         uses: ./
         with:
-          url: https://www.callable-ai.com/.well-known/openapi.yaml
+          url: https://www.callable-ai.com/api/openapi.json
           api-key: ${{ secrets.CALLABLE_API_KEY }}
           threshold: 70
           comment: "true"
