@@ -1,0 +1,71 @@
+name: "callable() Score"
+description: "Score your API docs for agent-readiness. Lighthouse for APIs."
+author: "callable"
+
+branding:
+  icon: "check-circle"
+  color: "purple"
+
+inputs:
+  url:
+    description: "URL to OpenAPI spec, MCP manifest, SKILL.md, or API docs"
+    required: true
+  api-key:
+    description: "callable() API key (ck_live_...)"
+    required: true
+  threshold:
+    description: "Minimum score to pass (0 = never fail)"
+    required: false
+    default: "0"
+  comment:
+    description: "Post PR comment with score breakdown"
+    required: false
+    default: "true"
+  github-token:
+    description: "Token for PR comments"
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  score:
+    description: "Overall score (0-100)"
+    value: ${{ steps.score.outputs.score }}
+  grade:
+    description: "Letter grade (A+/A/B/C/D/F)"
+    value: ${{ steps.score.outputs.grade }}
+  id:
+    description: "Score ID (for permalink)"
+    value: ${{ steps.score.outputs.id }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Score API docs
+      id: score
+      shell: bash
+      env:
+        CALLABLE_URL: ${{ inputs.url }}
+        CALLABLE_API_KEY: ${{ inputs.api-key }}
+      run: ${{ github.action_path }}/scripts/score.sh
+
+    - name: Post PR comment
+      if: github.event_name == 'pull_request' && inputs.comment == 'true'
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        SCORE_JSON: ${{ steps.score.outputs.json }}
+      run: ${{ github.action_path }}/scripts/comment.sh
+
+    - name: Check threshold
+      if: inputs.threshold != '0'
+      shell: bash
+      env:
+        SCORE: ${{ steps.score.outputs.score }}
+        THRESHOLD: ${{ inputs.threshold }}
+        GRADE: ${{ steps.score.outputs.grade }}
+      run: |
+        if [ "$SCORE" -lt "$THRESHOLD" ]; then
+          echo "::error::Score $SCORE ($GRADE) is below threshold $THRESHOLD"
+          exit 1
+        fi
+        echo "Score $SCORE ($GRADE) meets threshold $THRESHOLD"

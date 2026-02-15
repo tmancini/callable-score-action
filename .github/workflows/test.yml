@@ -1,0 +1,27 @@
+name: Self-test
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  score:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Score callable's own API
+        id: score
+        uses: ./
+        with:
+          url: https://callable.dev/.well-known/openapi.yaml
+          api-key: ${{ secrets.CALLABLE_API_KEY }}
+          threshold: 70
+          comment: "true"
+
+      - name: Print results
+        run: |
+          echo "Score: ${{ steps.score.outputs.score }}"
+          echo "Grade: ${{ steps.score.outputs.grade }}"
+          echo "ID:    ${{ steps.score.outputs.id }}"
