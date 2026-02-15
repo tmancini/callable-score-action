@@ -25,7 +25,7 @@ do_score() {
 
     # On connection failure, print curl stderr for debugging
     if [ "$status" = "000" ] && [ -s "${RESULT_FILE}.err" ]; then
-      echo "::debug::curl error: $(cat "${RESULT_FILE}.err")"
+      echo "::warning::curl error: $(cat "${RESULT_FILE}.err")"
     fi
 
     # Success
