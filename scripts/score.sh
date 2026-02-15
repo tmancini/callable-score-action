@@ -16,11 +16,17 @@ do_score() {
 
   while [ "$attempt" -le "$MAX_RETRIES" ]; do
     local status
-    status=$(curl -sL -o "$RESULT_FILE" -w "%{http_code}" --max-time "$TIMEOUT" \
+    status=$(curl -s -o "$RESULT_FILE" -w "%{http_code}" --max-time "$TIMEOUT" \
       -X POST "${API_BASE}/api/score" \
       -H "Content-Type: application/json" \
       -H "Authorization: Bearer ${CALLABLE_API_KEY}" \
-      -d "{\"url\": \"${CALLABLE_URL}\", \"force\": false}") || status="000"
+      -H "User-Agent: callable-score-action/1.0" \
+      -d "{\"url\": \"${CALLABLE_URL}\", \"force\": false}" 2>"${RESULT_FILE}.err") || status="000"
+
+    # On connection failure, print curl stderr for debugging
+    if [ "$status" = "000" ] && [ -s "${RESULT_FILE}.err" ]; then
+      echo "::debug::curl error: $(cat "${RESULT_FILE}.err")"
+    fi
 
     # Success
     if [ "$status" -ge 200 ] 2>/dev/null && [ "$status" -lt 300 ] 2>/dev/null; then
