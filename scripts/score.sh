@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-API_BASE="https://www.www.callable-ai.com"
+API_BASE="https://www.callable-ai.com"
 MAX_RETRIES=2
 TIMEOUT=120
 RESULT_FILE=$(mktemp)
